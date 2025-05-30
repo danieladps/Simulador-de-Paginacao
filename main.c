@@ -1,21 +1,39 @@
 #include <stdio.h>
 #include "simulador.h"
+#include "memoria.h"
+#include "processo.h"
+#include "tlb.h"
 
 int main() {
     Simulador *sim = inicializar_simulador(4096, 16384);
+    sim->algoritmo = 1; // 0=FIFO, 1=LRU
+
     inicializar_tlb(sim);
-    criar_processo(sim, 16384);
-    criar_processo(sim, 8192);
 
-    sim->algoritmo = 1;
+    Processo *p1 = criar_processo(sim, 16384); // 4 pÃ¡ginas
+    Processo *p2 = criar_processo(sim, 16384);  // 2 pÃ¡ginas
+    Processo *p3 = criar_processo(sim, 16384)
 
-    traduzir_endereco(sim, 1, 1234);
-    traduzir_endereco(sim, 1, 4321);
-    traduzir_endereco(sim, 1, 8192);
+    // SequÃªncia de acessos
+    traduzir_endereco(sim, 1, 1000);
+    traduzir_endereco(sim, 2, 2000);
+    traduzir_endereco(sim, 3, 3000);
 
+    traduzir_endereco(sim, 1, 5000);
+    traduzir_endereco(sim, 2, 6000);
+    traduzir_endereco(sim, 3, 7000);
 
-    exibir_mermoria_fisica(sim);
+    traduzir_endereco(sim, 1, 9000);
+    traduzir_endereco(sim, 2, 10000);
+    traduzir_endereco(sim, 3, 11000);
+
+    traduzir_endereco(sim, 1, 13000);
+    traduzir_endereco(sim, 2, 14000);
+    traduzir_endereco(sim, 3, 15000);
+
+    exibir_memoria_fisica(sim);
     exibir_estatisticas(sim);
     liberar_simulador(sim);
+
     return 0;
 }
