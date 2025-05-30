@@ -142,7 +142,7 @@ void exibir_memoria_fisica(Simulador *sim) {
 }
 
 void exibir_estatisticas(Simulador *sim) {
-    printf("\n======== ESTATÃSTICAS ========\n");
+    printf("\n======== ESTATISTICAS ========\n");
     printf("Total de acessos: %d\n", sim->total_acessos);
     printf("Page Faults: %d\n", sim->page_faults);
     float taxa = sim->total_acessos == 0 ? 0.0 : (float)sim->page_faults / sim->total_acessos * 100.0;
