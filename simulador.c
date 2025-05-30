@@ -1,8 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "simulador.h"
+#include "tlb.h"
+#include "memoria.h"
+#include "processo.h"
 
-Simulador* inicializar_simulador(int tam_pagina, int tam_mermoria) {
+Simulador* inicializar_simulador(int tam_pagina, int tam_memoria) {
     Simulador *sim = malloc(sizeof(Simulador));
     sim->tamanho_pagina = tam_pagina;
     sim->tamanho_memoria_fisica = tam_memoria;
@@ -21,7 +24,8 @@ Simulador* inicializar_simulador(int tam_pagina, int tam_mermoria) {
 }
 
 void liberar_simulador(Simulador *sim) {
-    for (int i = 0; i < sim->num_processos; i++) {
+     int i;
+    for (i = 0; i < sim->num_processos; i++) {
         free(sim->processos[i].tabela_paginas);
     }
 
@@ -31,9 +35,9 @@ void liberar_simulador(Simulador *sim) {
     free(sim);
 }
 
-void extrair_pagina_deslocamento(SImulador *sim, int endereco_virtual, int *pagina, int *deslocamento) {
-    *pagina = endereco_virtual/ sim->tamanho_paginas
-    *deslocamento = endereco_virtual % sim->tamanho_paginas
+void extrair_pagina_deslocamento(Simulador *sim, int endereco_virtual, int *pagina, int *deslocamento) {
+    *pagina = endereco_virtual/ sim->tamanho_pagina;
+    *deslocamento = endereco_virtual % sim->tamanho_pagina;
 }
 
 int verificar_pagina_presente(Simulador *sim, int pid, int pagina) {
@@ -45,10 +49,11 @@ int verificar_pagina_presente(Simulador *sim, int pid, int pagina) {
 }
 
 int carregar_pagina(Simulador *sim, int pid, int pagina) {
+    int i;
     MemoriaFisica *mem = &sim->memoria;
     int frame_livre = -1;
 
-    for (int i = 0; i < mem->num_frames; i++) {
+    for (i = 0; i < mem->num_frames; i++) {
         if (mem->frames[i] == 0)  {
             frame_livre = i;
             break;
@@ -64,7 +69,7 @@ int carregar_pagina(Simulador *sim, int pid, int pagina) {
                 frame_livre = substituir_pagina_lru(sim);
                 break;
             default:
-                printf("Erro: algoritmo de substituição inválido\n");
+                printf("Erro: algoritmo de substituiÃ§Ã£o invÃ¡lido\n");
                 return -1;
         }
     }
@@ -75,7 +80,7 @@ int carregar_pagina(Simulador *sim, int pid, int pagina) {
     Processo *proc = &sim->processos[pid - 1];
     proc->tabela_paginas[pagina].presente = 1;
     proc->tabela_paginas[pagina].frame = frame_livre;
-    proc->tabela_paginas[pagina].tampo_carga = sim->tempo_atual;
+    proc->tabela_paginas[pagina].tempo_carga = sim->tempo_atual;
     proc->tabela_paginas[pagina].ultimo_acesso = sim->tempo_atual;
 
     return frame_livre;
@@ -92,7 +97,7 @@ int traduzir_endereco(Simulador *sim, int pid, int endereco_virtual) {
     Processo *proc = &sim->processos[pid - 1];
 
     if (pagina >= proc->num_paginas) {
-        printf("Erro: endereço virtual inválido\n");
+        printf("Erro: endereÃ§o virtual invÃ¡lido\n");
         return -1;
     }
 
@@ -100,7 +105,7 @@ int traduzir_endereco(Simulador *sim, int pid, int endereco_virtual) {
 
     if (frame != -1) {
         int endereco_fisico = frame * sim->tamanho_pagina + deslocamento;
-        printf("Tempo t=%d: [TLB HIT] P%d Página: %d -> Frame: %d -> Endereco Fisico: %d\n", sim->tempo_atual, pid, pagina, frame, endereco_fisico);
+        printf("Tempo t=%d: [TLB HIT] P%d PÃ¡gina: %d -> Frame: %d -> Endereco Fisico: %d\n", sim->tempo_atual, pid, pagina, frame, endereco_fisico);
 
         proc->tabela_paginas[pagina].ultimo_acesso = sim->tempo_atual;
         
@@ -109,25 +114,22 @@ int traduzir_endereco(Simulador *sim, int pid, int endereco_virtual) {
 
     frame = verificar_pagina_presente(sim, pid, pagina);
     if (frame == -1) {
-        printf("Tempo t=%d: [PAGE FAULT] P%d, página %d\n", sim->tempo_atual, pid, pagina);
+        printf("Tempo t=%d: [PAGE FAULT] P%d, pÃ¡gina %d\n", sim->tempo_atual, pid, pagina);
         sim->page_faults++;
         frame = carregar_pagina(sim, pid, pagina);
-        printf("Tempo t=%d: Página %d de P%d carregada no frame %d\n", sim->tempo_atual, pagina, pid, frame);
+        printf("Tempo t=%d: PÃ¡gina %d de P%d carregada no frame %d\n", sim->tempo_atual, pagina, pid, frame);
     }
 
     int endereco_fisico = frame * sim->tamanho_pagina + deslocamento;
-    printf("Tempo t=%d: P%d Endereco Virtual: %d -> Página: %d -> Frame: %d -> Endereco Fisico: %d\n", sim->tempo_atual, pid, endereco_virtual, pagina, frame, endereco_fisico);
+    printf("Tempo t=%d: P%d Endereco Virtual: %d -> PÃ¡gina: %d -> Frame: %d -> Endereco Fisico: %d\n", sim->tempo_atual, pid, endereco_virtual, pagina, frame, endereco_fisico);
 
     return endereco_fisico;
 }
 
-void extrair_pagina_deslocamento(Simulador *sim, int endereco_virtual, int *pagina, int *deslocamento) {
-    *pagina = endereco_virtual / sim->tamanho_pagina;
-    *deslocameto = endereco_virtual % sim->tamanho_pagina;
-}
 void exibir_memoria_fisica(Simulador *sim) {
-    printf("Estado da memoria fisica: \n")
-    for (int i = 0; i < sim->memoria.num_frames; i++) {
+    printf("Estado da memoria fisica: \n");
+    int i;
+    for (i = 0; i < sim->memoria.num_frames; i++) {
         int val = sim->memoria.frames[i];
         if (val == 0) {
             printf("Frame %d: Livre\n", i);
@@ -140,7 +142,7 @@ void exibir_memoria_fisica(Simulador *sim) {
 }
 
 void exibir_estatisticas(Simulador *sim) {
-    printf("\n======== ESTATÍSTICAS ========\n");
+    printf("\n======== ESTATÃSTICAS ========\n");
     printf("Total de acessos: %d\n", sim->total_acessos);
     printf("Page Faults: %d\n", sim->page_faults);
     float taxa = sim->total_acessos == 0 ? 0.0 : (float)sim->page_faults / sim->total_acessos * 100.0;
@@ -149,6 +151,6 @@ void exibir_estatisticas(Simulador *sim) {
     printf("TLB Hits: %d\n", sim->tlb_hits);
     printf("TLB Misses: %d\n", sim->tlb_misses);
     float taxa_tlb = (sim-> tlb_hits + sim->tlb_misses) == 0 ? 0.0 :
-        (float)sim->tlb_hits / (sim->tlb_hits + sim->tlb_missses) * 100.0;
+        (float)sim->tlb_hits / (sim->tlb_hits + sim->tlb_misses) * 100.0;
     printf("Taxa de TLB Hits: %.2f%%\n", taxa_tlb);
 }
