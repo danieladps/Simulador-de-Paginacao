@@ -10,11 +10,11 @@ int main() {
 
     inicializar_tlb(sim);
 
-    Processo *p1 = criar_processo(sim, 16384); // 4 pÃ¡ginas
-    Processo *p2 = criar_processo(sim, 16384);  // 2 pÃ¡ginas
+    Processo *p1 = criar_processo(sim, 16384); // 4 páginas
+    Processo *p2 = criar_processo(sim, 16384);  
     Processo *p3 = criar_processo(sim, 16384)
 
-    // SequÃªncia de acessos
+    // Sequência de acessos
     traduzir_endereco(sim, 1, 1000);
     traduzir_endereco(sim, 2, 2000);
     traduzir_endereco(sim, 3, 3000);
